@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>V for Video! 🌌</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(ellipse at bottom, #0b0c1b 0%, #000000 100%);
+      color: white;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+    }
+    .question {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    button {
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #1f1f2e;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #343454;
+    }
+    .correct {
+      background-color: green !important;
+    }
+    .wrong {
+      background-color: red !important;
+    }
+    #scoreCard {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+    }
+    #timer, #wrongCounter, #streakCounter, #progressTracker {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: #ffd700;
+    }
+    #restartBtn {
+      margin-top: 2rem;
+      padding: 0.7rem 2rem;
+      font-size: 1.1rem;
+      background-color: #444466;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+    }
+    #nameForm {
+      margin-bottom: 1.5rem;
+    }
+    #nameInput {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="quizContainer">
+    <div id="nameForm">
+      <input type="text" id="nameInput" placeholder="Enter your name" />
+      <button onclick="beginQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quizContent" style="display:none;">
+      <div id="timer">⏳ Time: 0s</div>
+      <div id="wrongCounter">❌ Wrong Attempts: 0</div>
+      <div id="streakCounter">🔥 Streak: 0</div>
+      <div id="progressTracker">📍 Question 1 of 5</div>
+      <div class="question" id="question">Loading...</div>
+      <div class="options" id="options"></div>
+      <div id="scoreCard"></div>
+      <button id="restartBtn" style="display: none;">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      // Sample questions (you can paste your full quizData array here)
+ {
+  q: "What is a film review?",
+  options: [
+    "A critical evaluation of a film",
+    "A critical evaluation that gives a short summary and a personal opinion",
+    "A guide that helps readers decide whether to watch a film",
+    "An analysis of acting, direction, and technical elements",
+    "A personal reaction and viewpoint supported with examples from the film",
+    "A conclusion with judgement or recommendation"
+  ],
+  correct: [0,1,2,3,4,5],
+  example: "A film review is both critical and personal. It mixes factual details with your own response to guide the reader."
+},
+{
+  q: "Why must a film review be personal?",
+  options: [
+    "Because it reflects the reviewer’s unique opinion and feelings",
+    "Because readers want to know how the film affected you",
+    "Because personal reactions make the review engaging and authentic",
+    "Because opinion without personal touch feels dry and incomplete"
+  ],
+  correct: [0,1,2,3],
+  example: "A film review is NOT just information. It becomes meaningful when the writer adds their own perspective and response."
+},
+{
+  q: "What belongs in the introduction of a film review?",
+  options: [
+    "The title of the film",
+    "The name of the director",
+    "The release year",
+    "The main actors or actresses",
+    "The genre of the film",
+    "Music composer",
+    "Context such as adaptation, remake, or sequel"
+  ],
+  correct: [0,1,2,3,4,5,6],
+  example: "The INTRODUCTION should give basic information so the reader gets all the main data."
+},
+{
+  q: "What should be covered in the BRIEF PLOT SUMMARY section of the review?",
+  options: [
+    "Summarise the central conflict or theme",
+    "Keep the summary brief and clear",
+    "Avoid unnecessary detail",
+    "Leave out major spoilers"
+  ],
+  correct: [0,1,2,3],
+  example: "A review should give just enough of the PLOT to set context, without spoiling surprises."
+},
+{
+  q: "Which elements can be analysed in a film review?",
+  options: [
+    "Acting and characterisation",
+    "Direction and storytelling",
+    "Cinematography and visuals",
+    "Music and sound design",
+    "Editing and pacing",
+    "Comparison with other films",
+    "Special effects and technology"
+  ],
+  correct: [0,1,2,3,4,5,6],
+  example: "ANALYSIS OF KEY ELEMENTS: A film review examines both artistic and technical elements to judge how the film works."
+},
+{
+  q: "Why use comparisons in a film review?",
+  options: [
+    "To show if the film is new or similar to others",
+    "To connect it with films people already know",
+    "So fans of those films may also like this one"
+  ],
+  correct: [0,1,2],
+  example: "Comparisons help readers see if they will enjoy the film, especially if they liked similar movies."
+},
+{
+  q: "What makes a review a good review?",
+  options: [
+    "Being honest but respectful",
+    "Saying both strong and weak points",
+    "Remembering that tastes can differ"
+  ],
+  correct: [0,1,2],
+  example: "A fair review is honest but not rude, and it shows balance."
+},
+{
+  q: "Why is emotional impact important in a film review?",
+  options: [
+    "Because films are meant to make us feel something",
+    "Because strong feelings show the film’s power",
+    "Because emotions help readers connect with your review"
+  ],
+  correct: [0,1,2],
+  example: "A good review tells how the film made you feel—fear, joy, sadness, or excitement."
+},
+{
+  q: "Why should a reviewer talk about originality?",
+  options: [
+    "To show if the story feels fresh or predictable",
+    "To explain if the film copies too many ideas",
+    "To point out what makes the film different from others"
+  ],
+  correct: [0,1,2],
+  example: "ORIGINALITY tells readers if the film is special or just another repeat."
+},
+{
+  q: "What does it mean if a film is timeless?",
+  options: [
+    "People will remember it for many years",
+    "It still feels powerful even after a long time",
+    "It speaks to ideas and feelings that never grow old"
+  ],
+  correct: [0,1,2],
+  example: "A TIMELESS film stays with us—it does not fade away quickly."
+},
+{
+  q: "Why should a review mention the audience (Who will like it?)?",
+  options: [
+    "So readers know who will enjoy the film",
+    "Because some films are for everyone, some for a niche",
+    "So fans of certain genres or actors can decide to watch"
+  ],
+  correct: [0,1,2],
+  example: "Mentioning the audience helps match the right film with the right viewers."
+},
+{
+  q: "Why write about your favourite scene in a film review?",
+  options: [
+    "It shows what part touched you most",
+    "It helps readers imagine the film",
+    "It proves you really watched it",
+    "It makes the review more personal"
+  ],
+  correct: [0,1,2,3],
+  example: "Sharing your FAVOURITE SCENE shows your personal connection and makes the review lively."
+},
+{
+  q: "Why mention what you did not like in a film review?",
+  options: [
+    "It makes the review balanced",
+    "It shows honesty",
+    "It gives ideas for improvement",
+    "It shows you hate the film"
+  ],
+  correct: [0,1,2],
+  example: "Pointing out what you did not like shows honesty and makes the review fair. It doesn't mean you hate it."
+},
+
+{
+  q: "Why are THEMES AND MESSAGES important in a review?",
+  options: [
+    "They show what the film is really about beyond the story",
+    "They highlight deeper social, cultural, or moral ideas",
+    "They help readers connect the film to wider issues",
+    "They reveal whether the film is original or cliché"
+  ],
+  correct: [0,1,2,3],
+  example: "THEMES make a review richer by showing what the film says about life or society."
+},
+{
+  q: "What makes a film review convincing?",
+  options: [
+    "Using examples from the film",
+    "Quoting dialogue or memorable lines",
+    "Describing scenes that illustrate your point",
+    "Linking opinions to specific details"
+  ],
+  correct: [0,1,2,3],
+  example: "A strong review supports OPINIONS WITH EVIDENCE from the film."
+},
+{
+  q: "Why include 'what could be better' in a film review?",
+  options: [
+    "It shows you are thinking critically",
+    "It helps filmmakers see feedback",
+    "It makes your review more useful",
+    "It proves you dislike the movie"
+  ],
+  correct: [0,1,2],
+  example: "CRITICAL ANALYSIS suggests what could be better and it makes your review constructive and helpful."
+},
+{
+  q: "Why write 'If I was the director' in a film review?",
+  options: [
+    "It shows your imagination",
+    "It helps you share creative ideas",
+    "It proves you can make a film",
+    "It makes the review fun and personal"
+  ],
+  correct: [0,1,3],
+  example: "CRITICAL ANALYSIS OF THE DIRECTION lets you imagine changes and share your creativity."
+},
+{
+  q: "Why write 'If I was the actor' in a film review?",
+  options: [
+    "It helps you connect with the character",
+    "It shows your acting skills directly",
+    "It makes the review personal and fun",
+    "It lets you imagine different choices in acting"
+  ],
+  correct: [0,2,3],
+  example: "CRITICAL ANALYSIS OF THE ACTOR'S PERFORMANCE helps you step into the role and think about acting choices."
+},
+{
+  q: "Why write 'If I was the script writer' in a film review?",
+  options: [
+    "It helps you think about better dialogues or story changes",
+    "It shows how you would improve the script",
+    "It makes the review more creative and personal",
+    "It proves you can write a whole film script"
+  ],
+  correct: [0,1,2],
+  example: "CRITICAL ANALYSIS OF THE SCRIPT shows your ideas for improving story, dialogues, or twists."
+},
+{
+  q: "Why write 'If I was the music composer' in a film review?",
+  options: [
+    "It shows how you would make the background score or songs better",
+    "It lets you share your ideas about mood and emotion in the film",
+    "It makes your review sound creative and fun",
+    "It proves you can sing all the songs in the film"
+  ],
+  correct: [0,1,2],
+  example: "CRITICAL ANALYSIS OF THE MUSIC helps you express how music could change the feeling of the film."
+},
+{
+  q: "What kind of RECOMMENDATION can a review give?",
+  options: [
+    "Who the film is best suited for (families, teens, fans of action, etc.)",
+    "Whether it is worth watching in theatres or at home",
+    "What kind of audience will appreciate it most",
+    "A clear statement if the film is worth watching"
+  ],
+  correct: [0,1,2,3],
+  example: "A review helps readers decide if the film is right for them."
+},
+{
+  q: "How should a film review end?",
+  options: [
+    "With a final judgement on the film",
+    "With a star rating, score, or verdict",
+    "With a short summary of your overall opinion",
+    "With a closing line that leaves an impression"
+  ],
+  correct: [0,1,2,3],
+  example: "In the CONCLUSION, end with a verdict, rating, or recommendation to wrap up the evaluation."
+}
+    ];
+
+    let current = 0;
+    let correctCount = 0;
+    let totalWrongGuesses = 0;
+    let startTime;
+    let timerInterval;
+    let playerName = "";
+    let guessesPerQuestion = [];
+    let currentStreak = 0;
+    let highestStreak = 0;
+    let streakHistory = [];
+
+    const questionEl = document.getElementById("question");
+    const optionsEl = document.getElementById("options");
+    const timerEl = document.getElementById("timer");
+    const wrongCounterEl = document.getElementById("wrongCounter");
+    const streakCounterEl = document.getElementById("streakCounter");
+    const progressTracker = document.getElementById("progressTracker");
+    const scoreCard = document.getElementById("scoreCard");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function beginQuiz() {
+      const nameField = document.getElementById("nameInput");
+      if (!nameField.value.trim()) {
+        alert("Please enter your name!");
+        return;
+      }
+      playerName = nameField.value.trim();
+      document.getElementById("nameForm").style.display = "none";
+      document.getElementById("quizContent").style.display = "block";
+      startQuiz();
+    }
+
+    function startQuiz() {
+      current = 0;
+      correctCount = 0;
+      totalWrongGuesses = 0;
+      guessesPerQuestion = [];
+      currentStreak = 0;
+      highestStreak = 0;
+      streakHistory = [];
+      startTime = Date.now();
+      timerEl.innerText = "⏳ Time: 0s";
+      wrongCounterEl.innerText = `❌ Wrong Attempts: 0`;
+      streakCounterEl.innerText = `🔥 Streak: 0`;
+      scoreCard.innerHTML = "";
+      restartBtn.style.display = "none";
+      loadQuestion();
+      startTimer();
+    }
+
+    function loadQuestion() {
+      if (current >= quizData.length) {
+        return showScore();
+      }
+
+      const data = quizData[current];
+      guessesPerQuestion[current] = 0;
+
+      // Clear previous buttons
+      optionsEl.innerHTML = "";
+
+      questionEl.innerHTML = `${data.q}<br><br><em>Example: ${data.example}</em>`;
+      progressTracker.innerText = `📍 Question ${current + 1} of ${quizData.length}`;
+
+      data.options.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.innerText = option;
+        btn.dataset.index = index;
+        btn.onclick = () => handleAnswer(btn, data.correct);
+        optionsEl.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(button, correctIndexes) {
+      guessesPerQuestion[current]++;
+      const idx = parseInt(button.dataset.index);
+      const isCorrect = correctIndexes.includes(idx);
+
+      if (isCorrect) {
+        if (!button.classList.contains("correct")) {
+          button.classList.add("correct");
+          button.disabled = true;
+
+          currentStreak++;
+          if (currentStreak > highestStreak) highestStreak = currentStreak;
+          streakHistory.push(currentStreak);
+          streakCounterEl.innerText = `🔥 Streak: ${currentStreak}`;
+        }
+
+        const allClicked = correctIndexes.every(i =>
+          document.querySelector(`button[data-index="${i}"]`).classList.contains("correct")
+        );
+
+        if (allClicked) {
+          correctCount++;
+          setTimeout(() => {
+            current++;
+            loadQuestion();
+          }, 500);
+        }
+      } else {
+        totalWrongGuesses++;
+        wrongCounterEl.innerText = `❌ Wrong Attempts: ${totalWrongGuesses}`;
+        button.classList.add("wrong");
+        setTimeout(() => button.classList.remove("wrong"), 500);
+
+        currentStreak = 0;
+        streakCounterEl.innerText = `🔥 Streak: 0`;
+      }
+    }
+
+    function showScore() {
+      clearInterval(timerInterval);
+      const totalTime = Math.floor((Date.now() - startTime) / 1000);
+      questionEl.innerText = "🎉 Quiz Completed!";
+      optionsEl.innerHTML = "";
+      progressTracker.innerText = "";
+      scoreCard.innerHTML = `
+        <p>👤 Player: ${playerName}</p>
+        <p>✅ Correct Answers: ${correctCount} / ${quizData.length}</p>
+        <p>❌ Wrong Attempts: ${totalWrongGuesses}</p>
+        <p>🔥 Highest Streak: ${highestStreak}</p>
+        <p>⏱️ Time Taken: ${totalTime} seconds</p>
+        <p>📝 Guesses per Question: ${guessesPerQuestion.join(", ")}</p>
+      `;
+      restartBtn.style.display = "inline-block";
+
+      // Send data to Google Sheet
+     fetch("https://script.google.com/macros/s/AKfycbyi8GPeLlNo-dOMRdtbmIJxMeEBHz4uZLOVZSzayIoJ53nLLwLQ1vlQ28CeWLJUgb6y/exec", {
+  method: "POST",
+  mode: "no-cors",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: playerName,
+    correct: correctCount,
+    wrong: totalWrongGuesses,
+    time: totalTime,
+    guesses: guessesPerQuestion,   // stays as array
+    highestStreak: highestStreak   // still logged
+  })
+});
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timerEl.innerText = `⏳ Time: ${elapsed}s`;
+      }, 1000);
+    }
+
+    restartBtn.onclick = () => {
+      document.getElementById("quizContent").style.display = "none";
+      document.getElementById("nameForm").style.display = "block";
+      document.getElementById("nameInput").value = "";
+    };
+  </script>
+</body>
+</html>
